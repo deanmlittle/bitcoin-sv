@@ -392,7 +392,8 @@ void getblocktemplate(const Config& config,
             "in the following spec\n"
             "     {\n"
             "       \"mode\":\"template\"    (string, optional) This must be "
-            "set to \"template\", \"proposal\" (see BIP 23), or omitted\n"
+            "set to \"template\", \"proposal\", \"compact\" (see BIP 23), or "
+            "omitted\n"
             "       \"capabilities\":[     (array, optional) A list of "
             "strings\n"
             "           \"support\"          (string) client side supported "
@@ -573,7 +574,7 @@ void getblocktemplate(const Config& config,
         }
     }
 
-    if (strMode != "template") {
+    if (strMode != "template" && strMode != "compact") {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
     }
 
@@ -712,30 +713,34 @@ void getblocktemplate(const Config& config,
                 continue;
             }
 
-            jWriter.writeBeginObject();
+            if(strMode == "compact") {
+                jWriter.pushV(tx.GetHash().GetHex());
+            } else {
+                jWriter.writeBeginObject();
 
-            jWriter.pushK("data");
-            jWriter.pushQuote();
-            jWriter.flush();
-            // EncodeHexTx supports streaming (large transaction's hex should be chunked)
-            EncodeHexTx(tx, httpWriter, RPCSerializationFlags());
-            jWriter.pushQuote();
+                jWriter.pushK("data");
+                jWriter.pushQuote();
+                jWriter.flush();
+                // EncodeHexTx supports streaming (large transaction's hex should be chunked)
+                EncodeHexTx(tx, httpWriter, RPCSerializationFlags());
+                jWriter.pushQuote();
 
-            jWriter.pushKV("txid", txId.GetHex());
-            jWriter.pushKV("hash", tx.GetHash().GetHex());
+                jWriter.pushKV("txid", txId.GetHex());
+                jWriter.pushKV("hash", tx.GetHash().GetHex());
 
-            jWriter.writeBeginArray("depends");
-            for (const CTxIn &in : tx.vin) {
-                if (setTxIndex.count(in.prevout.GetTxId())) {
-                    jWriter.pushV(setTxIndex[in.prevout.GetTxId()]);
+                jWriter.writeBeginArray("depends");
+                for (const CTxIn &in : tx.vin) {
+                    if (setTxIndex.count(in.prevout.GetTxId())) {
+                        jWriter.pushV(setTxIndex[in.prevout.GetTxId()]);
+                    }
                 }
+                jWriter.writeEndArray();
+
+                unsigned int index_in_template = i - 1;
+                jWriter.pushKV("fee", pblocktemplate->vTxFees[index_in_template].GetSatoshis());
+
+                jWriter.writeEndObject();
             }
-            jWriter.writeEndArray();
-
-            unsigned int index_in_template = i - 1;
-            jWriter.pushKV("fee", pblocktemplate->vTxFees[index_in_template].GetSatoshis());
-
-            jWriter.writeEndObject();
         }
 
         jWriter.writeEndArray();
