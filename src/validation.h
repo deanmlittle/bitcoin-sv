@@ -739,7 +739,8 @@ CTxnValResult TxnValidation(
     const Config &config,
     CTxMemPool &pool,
     TxnDoubleSpendDetectorSPtr dsDetector,
-    bool fUseLimits);
+    bool fUseLimits,
+    bool dontCheckDust = false);
 
 /**
  * Handle an exception thrown during txn processing.

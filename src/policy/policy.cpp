@@ -114,7 +114,7 @@ bool IsConsolidationTxn(const Config &config, const CTransaction &tx, const CCoi
     return true;
 }
 
-bool IsStandardTx(const Config &config, const CTransaction &tx, int32_t nHeight, std::string &reason) {
+bool IsStandardTx(const Config &config, const CTransaction &tx, int32_t nHeight, std::string &reason, bool dontCheckDust) {
     if (tx.nVersion > CTransaction::MAX_STANDARD_VERSION || tx.nVersion < 1) {
         reason = "version";
         return false;
@@ -160,7 +160,7 @@ bool IsStandardTx(const Config &config, const CTransaction &tx, int32_t nHeight,
         } else if ((whichType == TX_MULTISIG) && (!fIsBareMultisigStd)) {
             reason = "bare-multisig";
             return false;
-        } else if (txout.IsDust(dustRelayFee, IsGenesisEnabled(config, nHeight))) {
+        } else if(txout.IsDust(dontCheckDust ? zeroDust : dustRelayFee, IsGenesisEnabled(config, nHeight))) {
             reason = "dust";
             return false;
         }
@@ -247,5 +247,6 @@ std::optional<bool> AreInputsStandard(
     return true;
 }
 
+CFeeRate zeroDust = CFeeRate(Amount(0));
 CFeeRate dustRelayFee = CFeeRate(DUST_RELAY_TX_FEE);
 static_assert(DUST_RELAY_TX_FEE == DEFAULT_MIN_RELAY_TX_FEE, "lowering only fees increases dust");

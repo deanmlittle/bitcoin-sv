@@ -109,7 +109,8 @@ class CTxnValidator final
     CValidationState processValidation(
         const TxInputDataSPtr& txInputData,
         const mining::CJournalChangeSetPtr& changeSet,
-        bool fLimitMempoolSize=false);
+        bool fLimitMempoolSize=false,
+        bool dontCheckDust=false);
     /** Process a set of txns */
     CTxnValidator::RejectedTxns processValidation(
         TxInputDataSPtrVec vTxInputData,
@@ -154,7 +155,8 @@ class CTxnValidator final
         const TxInputDataSPtr& pTxInputData,
         CTxnHandlers& handlers,
         bool fLimitMempoolSize,
-        bool fUseLimits);
+        bool fUseLimits,
+        bool dontCheckDust = false);
 
     /** Process all newly arrived transactions. */
     CTxnValidator::CIntermediateResult processNewTransactionsNL(

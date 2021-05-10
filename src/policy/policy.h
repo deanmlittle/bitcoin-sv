@@ -191,7 +191,7 @@ bool IsStandard(const Config &config, const CScript &scriptPubKey, int32_t nScri
  * @return True if all outputs (scriptPubKeys) use only standard transaction
  * forms
  */
-bool IsStandardTx(const Config &config, const CTransaction &tx, int32_t nHeight, std::string &reason);
+bool IsStandardTx(const Config &config, const CTransaction &tx, int32_t nHeight, std::string &reason, bool dontCheckDust = false);
 
 /**
  * Check for standard transaction types
@@ -206,6 +206,7 @@ std::optional<bool> AreInputsStandard(
     const CCoinsViewCache &mapInputs,
     const int32_t mempoolHeight);
 
+extern CFeeRate zeroDust;
 extern CFeeRate dustRelayFee;
 
 #endif // BITCOIN_POLICY_POLICY_H

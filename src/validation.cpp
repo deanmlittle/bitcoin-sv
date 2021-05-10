@@ -1035,7 +1035,8 @@ CTxnValResult TxnValidation(
     const Config& config,
     CTxMemPool& pool,
     TxnDoubleSpendDetectorSPtr dsDetector,
-    bool fUseLimits) {
+    bool fUseLimits,
+    bool dontCheckDust) {
 
     using Result = CTxnValResult;
 
@@ -1092,7 +1093,7 @@ CTxnValResult TxnValidation(
     //          but we will mine it nevertheless. Anyone can collect such
     //          coin by providing OP_1 unlock script
     std::string reason;
-    bool fStandard = IsStandardTx(config, tx, chainActive.Height() + 1, reason);
+    bool fStandard = IsStandardTx(config, tx, chainActive.Height() + 1, reason, dontCheckDust);
     if (fStandard) {
         state.SetStandardTx();
     }

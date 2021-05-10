@@ -1204,7 +1204,7 @@ static UniValue signrawtransaction(const Config &config,
 static UniValue sendrawtransaction(const Config &config,
                                    const JSONRPCRequest &request) {
     if (request.fHelp || request.params.size() < 1 ||
-        request.params.size() > 3) {
+        request.params.size() > 4) {
         throw std::runtime_error(
             "sendrawtransaction \"hexstring\" ( allowhighfees dontcheckfee )\n"
             "\nSubmits raw transaction (serialized, hex-encoded) to local node "
@@ -1216,6 +1216,7 @@ static UniValue sendrawtransaction(const Config &config,
             "2. allowhighfees    (boolean, optional, default=false) Allow high "
             "fees\n"
             "3. dontcheckfee     (boolean, optional, default=false) Don't check fee\n"
+            "4. dontcheckdust    (boolean, optional, default=false) Don't check dust\n"
             "\nResult:\n"
             "\"hex\"             (string) The transaction hash in hex\n"
             "\nExamples:\n"
@@ -1232,7 +1233,7 @@ static UniValue sendrawtransaction(const Config &config,
             HelpExampleRpc("sendrawtransaction", "\"signedhex\""));
     }
     RPCTypeCheck(request.params,
-                 {UniValue::VSTR, UniValue::VBOOL, UniValue::VBOOL});
+                 {UniValue::VSTR, UniValue::VBOOL, UniValue::VBOOL, UniValue::VBOOL});
     // parse hex string from parameter
     CMutableTransaction mtx;
     if (!DecodeHexTx(mtx, request.params[0].get_str())) {
@@ -1249,6 +1250,11 @@ static UniValue sendrawtransaction(const Config &config,
     bool dontCheckFee = false;
     if (request.params.size() > 2 && request.params[2].get_bool()) {
         dontCheckFee = true;
+    }
+
+    bool dontCheckDust = false;
+    if (request.params.size() > 3 && request.params[3].get_bool()) {
+        dontCheckDust = true;
     }
 
     if (!g_connman) {
@@ -1290,7 +1296,8 @@ static UniValue sendrawtransaction(const Config &config,
             txValidator->processValidation(
                 std::move(pTxInputData), // txn's input data
                 changeSet, // an instance of the journal
-                true) // fLimitMempoolSize
+                true, //fLimitMempoolSize
+                dontCheckDust) // check dust
         };
         // Check if the transaction was accepted by the mempool.
         // Due to potential race-condition we have to explicitly call exists() instead of

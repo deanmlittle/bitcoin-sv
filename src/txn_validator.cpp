@@ -130,7 +130,8 @@ void CTxnValidator::newTransaction(TxInputDataSPtrVec vTxInputData) {
 CValidationState CTxnValidator::processValidation(
     const TxInputDataSPtr& pTxInputData,
     const mining::CJournalChangeSetPtr& changeSet,
-    bool fLimitMempoolSize) {
+    bool fLimitMempoolSize,
+    bool dontCheckDust) {
 
     const CTransactionRef& ptx = pTxInputData->GetTxnPtr();
     const CTransaction &tx = *ptx;
@@ -162,7 +163,8 @@ CValidationState CTxnValidator::processValidation(
                 pTxInputData,
                 handlers,
                 fLimitMempoolSize,
-                false);
+                false,
+                dontCheckDust);
         // Check if txn is resubmitted for revalidation
         // - currently only finalised txn can be re-submitted
         if (result.mState.IsResubmittedTx()) {
@@ -173,7 +175,8 @@ CValidationState CTxnValidator::processValidation(
                     pTxInputData,
                     handlers,
                     fLimitMempoolSize,
-                    false);
+                    false,
+                    dontCheckDust);
         }
     } catch (const std::exception& e) {
         return HandleTxnProcessingException("An exception thrown in txn processing: " + std::string(e.what()),
@@ -522,7 +525,8 @@ CTxnValResult CTxnValidator::executeTxnValidationNL(
     const TxInputDataSPtr& pTxInputData,
     CTxnHandlers& handlers,
     bool fLimitMempoolSize,
-    bool fUseLimits) {
+    bool fUseLimits,
+    bool dontCheckDust) {
 
     // Execute txn validation.
     CTxnValResult result =
@@ -531,7 +535,8 @@ CTxnValResult CTxnValidator::executeTxnValidationNL(
             mConfig,
             mMempool,
             mpTxnDoubleSpendDetector,
-            fUseLimits);
+            fUseLimits,
+            dontCheckDust);
     // Process validated results for the given txn
     ProcessValidatedTxn(mMempool, result, handlers, fLimitMempoolSize, mConfig);
     return result;
