@@ -1935,6 +1935,28 @@ void CTxMemPool::removeStagedNL(
     TryAcceptToPrimaryMempoolNL(std::move(toUpdateAfterDeletion), changeSet);
 }
 
+int CTxMemPool::Evict(const TxId& txId, const mining::CJournalChangeSetPtr& changeSet)
+{
+    std::unique_lock lock{smtx};
+
+    auto it = mapTx.find(txId);
+
+    //If the TX isn't found, return 0 to reflect no changes being made
+    if(it == mapTx.end())
+    {
+        return 0;
+    }
+    
+    //Create an eviction set for all transactions that need to be removed
+    setEntries evictionSet;
+
+    GetDescendantsNL(it, evictionSet);
+
+    CEnsureNonNullChangeSet nonNullChangeSet(*this, changeSet);
+    removeStagedNL(evictionSet, nonNullChangeSet.Get(), noConflict, MemPoolRemovalReason::EVICTED);
+    return evictionSet.size();
+}
+
 int CTxMemPool::Expire(int64_t time, const mining::CJournalChangeSetPtr& changeSet)
 {
     std::unique_lock lock{smtx};

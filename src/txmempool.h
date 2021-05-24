@@ -299,7 +299,9 @@ enum class MemPoolRemovalReason {
     //! Removed for conflict with in-block transaction
     CONFLICT,
     //! Removed for replacement
-    REPLACED
+    REPLACED,
+    //! Manually evicted by transaction processor (tm)
+    EVICTED
 };
 
 struct DisconnectedBlockTransactions;
@@ -846,9 +848,15 @@ public:
         const mining::CJournalChangeSetPtr& changeSet,
         std::vector<COutPoint> *pvNoSpendsRemaining = nullptr);
 
+    
+    /** Evict a transaction (and its dependencies) in the mempool by txid.
+     * Return the number of removed transactions. */
+    int Evict(const TxId& txId, const mining::CJournalChangeSetPtr& changeSet);
+
     /** Expire all transaction (and their dependencies) in the mempool older
      * than time. Return the number of removed transactions. */
     int Expire(int64_t time, const mining::CJournalChangeSetPtr& changeSet);
+    
 
     /**
      * Check for conflicts with in-mempool transactions.

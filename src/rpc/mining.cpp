@@ -717,7 +717,7 @@ void getblocktemplate(const Config& config,
             }
 
             if(strMode == "compact") {
-                jWriter.pushV(tx.GetHash().GetHex());
+                jWriter.pushV(txId.GetHex());
             } else {
                 jWriter.writeBeginObject();
 

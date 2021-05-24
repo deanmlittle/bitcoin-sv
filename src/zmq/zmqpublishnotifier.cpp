@@ -147,6 +147,9 @@ bool CZMQPublishRemovedFromMempoolNotifier::NotifyRemovedFromMempool(const uint2
         case MemPoolRemovalReason::SIZELIMIT:
             jw.pushKV("reason", "mempool-sizelimit-exceeded");
             break;
+        case MemPoolRemovalReason::EVICTED:
+            jw.pushKV("reason", "tx-evicted-by-transaction-processor");
+            break;
         case MemPoolRemovalReason::CONFLICT:
             if (conflictedWith)
             {
@@ -203,6 +206,9 @@ bool CZMQPublishRemovedFromMempoolBlockNotifier::NotifyRemovedFromMempoolBlock(c
             break;
         case MemPoolRemovalReason::BLOCK:
             jw.pushKV("reason", "included-in-block");
+            break;
+        case MemPoolRemovalReason::EVICTED:
+            jw.pushKV("reason", "tx-evicted-by-transaction-processor");
             break;
         default:
             jw.pushKV("reason", "unknown-reason");

@@ -151,6 +151,65 @@ void getrawtransaction(const Config& config,
     }
 }
 
+void removetransaction(const Config& config,
+                       const JSONRPCRequest& request,
+                       HTTPRequest* httpReq,
+                       bool processedInBatch)
+{
+    if (request.fHelp || request.params.size() < 1 ||
+        request.params.size() > 2) 
+    {
+        throw std::runtime_error(
+            "removetransaction \"txid\"\n"
+
+            "\nRemoves a transaction and all of its children from the mempool.\n"
+
+            "\nArguments:\n"
+            "1. \"txid\"      (string, required) The transaction id\n"
+
+            "\nResult (if verbose is not set or set to false):\n"
+            "\"data\"      (string) The serialized, hex-encoded data for "
+            "'txid'\n"
+
+            "\nResult (if verbose is set to true):\n"
+            "{\n"
+            "  \"removed\": [\n"
+            "        (array of txids)\n"
+            "   ]\n"
+            "}\n"
+
+            "\nExamples:\n" +
+            HelpExampleCli("removetransaction", "\"txid\""));
+    }
+
+    if(httpReq == nullptr)
+        return;
+    
+    CHttpTextWriter httpWriter(*httpReq);
+    CJSONWriter jWriter(httpWriter, false);
+
+    TxId txid = TxId(ParseHashV(request.params[0], "parameter 1"));
+
+    CJournalChangeSetPtr changeSet {
+        mempool.getJournalBuilder().getNewChangeSet(JournalUpdateReason::NEW_TXN)
+    };
+    
+    int result = mempool.Evict(txid, changeSet);
+    
+    //Actually remove the tx and its children
+    httpReq->WriteHeader("Content-Type", "application/json");
+    httpReq->StartWritingChunks(HTTP_OK);
+    jWriter.writeBeginObject();
+    jWriter.pushKV("result", result);
+    jWriter.writeEndObject();
+    jWriter.flush();
+    httpWriter.Flush();
+    if (!processedInBatch)
+    {
+        httpReq->StopWritingChunks();
+    }
+}
+
 void getrawtransaction(const Config& config,
                        const JSONRPCRequest& request,
                        CTextWriter& textWriter,
@@ -2199,6 +2258,7 @@ static const CRPCCommand commands[] = {
     //  category            name                      actor (function)        okSafeMode
     //  ------------------- ------------------------  ----------------------  ----------
     { "rawtransactions",    "getrawtransaction",      getrawtransaction,      true,  {"txid","verbose"} },
+    { "rawtransactions",    "removetransaction",      removetransaction,      true,  {"txid"} },
     { "rawtransactions",    "createrawtransaction",   createrawtransaction,   true,  {"inputs","outputs","locktime"} },
     { "rawtransactions",    "decoderawtransaction",   decoderawtransaction,   true,  {"hexstring"} },
     { "rawtransactions",    "decodescript",           decodescript,           true,  {"hexstring"} },
